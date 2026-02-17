@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
 import { buildFingerprint } from "@/lib/fingerprint";
@@ -23,7 +23,7 @@ interface PollData {
 }
 
 interface PollPageProps {
-  params: { pollId: string };
+  params: Promise<{ pollId: string }>;
 }
 
 interface CountEntry {
@@ -44,7 +44,8 @@ const chartPalette = [
   "#b36bff"
 ];
 
-export default function PollPage({ params }: PollPageProps) {
+export default function PollPage(props: PollPageProps) {
+  const params = use(props.params);
   const [poll, setPoll] = useState<PollData | null>(null);
   const [options, setOptions] = useState<PollOption[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});

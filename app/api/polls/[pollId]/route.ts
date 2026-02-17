@@ -5,12 +5,12 @@ import { supabaseAdmin } from "@/lib/supabaseServer";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-interface RouteContext {
-  params: { pollId: string };
-}
-
-export async function GET(request: Request, context: RouteContext) {
-  const pollId = context.params.pollId;
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ pollId: string }> }
+) {
+  const params = await props.params;
+  const pollId = params.pollId;
 
   const { data: poll, error: pollError } = await supabaseAdmin
     .from("polls")

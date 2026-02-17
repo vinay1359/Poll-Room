@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseServer";
 
-interface RouteContext {
-  params: { pollId: string };
-}
-
-export async function GET(_request: Request, context: RouteContext) {
-  const pollId = context.params.pollId;
+export async function GET(
+  _request: Request,
+  props: { params: Promise<{ pollId: string }> }
+) {
+  const params = await props.params;
+  const pollId = params.pollId;
   const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
 
   const { data: votes, error } = await supabaseAdmin
