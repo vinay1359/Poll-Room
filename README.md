@@ -167,6 +167,53 @@ The app works with Supabase Realtime only. Socket.io is optional for viewer coun
 - Database row-level security with Supabase policies
 - Service role key never exposed to client
 
+## Security & Anti-Abuse Details
+
+**How It Works (Simple Explanation):**
+
+1. **Device Fingerprinting** - When you visit a poll, the app creates a unique ID by combining your browser type, version, screen size, timezone, and language. This helps identify if the same device tries to vote twice.
+
+2. **Rate Limiting** - If the same IP address tries to vote more than 5 times within 5 minutes, it gets blocked for 10 minutes. This stops spam attacks.
+
+3. **Nonce (One-Time Tokens)** - Each time you load a poll page, you get a special code that expires in 5 minutes and can only be used once. If someone tries to replay the same vote request, it gets rejected.
+
+4. **Timestamp Validation** - Vote requests older than 5 minutes or from the future are automatically rejected. This prevents storing old requests and replaying them later.
+
+5. **Behavior Score** - The app tracks how long you're on the page and your mouse movements. Real humans need at least 7 points (example: 4 seconds on page + 3 mouse moves = 7 points). Instant clicks with no movement get blocked.
+
+6. **IP Hashing** - Your IP address is encrypted using SHA-256 before storing. This tracks duplicates without saving your actual IP address for privacy.
+
+**Edge Cases We Handle:**
+
+- ✅ Poll expires while you're voting → Returns "expired" message
+- ✅ Same device votes twice → Returns "duplicate" message  
+- ✅ Redis server crashes → Automatically switches to memory-based rate limiting
+- ✅ Someone replays an old vote request → Rejected as replay attack
+- ✅ Bot clicks too fast without moving mouse → Friendly error asking to read the poll
+- ✅ Vote request with future timestamp → Rejected as invalid
+- ✅ Server restarts → Rate limit data persists in Redis (lost in memory fallback)
+
+**Known Limitations (What Could Be Improved):**
+
+- ⚠️ Can be bypassed using different browsers or devices on the same computer
+- ⚠️ Switching VPN or using proxy servers can bypass IP-based rate limits
+- ⚠️ Sophisticated bots can simulate mouse movements to fake behavior score
+- ⚠️ If Redis is not configured, memory fallback loses rate limit data on server restart
+- ⚠️ Google OAuth verification is prepared but not fully implemented
+- ⚠️ No CAPTCHA for suspicious activity (could be added as Layer 7)
+- ⚠️ Browser fingerprint can be spoofed with specialized tools
+- ⚠️ No email verification system (could prevent multi-account abuse)
+
+**What Makes a Vote "Trusted":**
+- New device (first time voting on this poll)
+- Clean IP (not rate limited)
+- Behavior score ≥ 7
+- Valid nonce (not reused)
+- Recent timestamp (within 5 minutes)
+- No cooldown active
+
+All votes that pass these checks get a trust score of 100 and are counted immediately.
+
 ## Technology Stack
 
 **Frontend:**

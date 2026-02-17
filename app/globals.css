@@ -661,6 +661,19 @@ textarea {
   transition: all 0.2s ease;
 }
 
+/* Fix datetime-local calendar icon visibility in dark mode */
+input[type="datetime-local"] {
+  color-scheme: light dark;
+}
+
+[data-theme="dark"] input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+[data-theme="light"] input[type="datetime-local"] {
+  color-scheme: light;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
