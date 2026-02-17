@@ -31,19 +31,6 @@ interface CountEntry {
   count: number;
 }
 
-const chartPalette = [
-  "#ef6a3b",
-  "#f0a93a",
-  "#2f9c95",
-  "#6e64d7",
-  "#1b7f4b",
-  "#c2566f",
-  "#3c72d9",
-  "#2f2f2f",
-  "#7f5f3a",
-  "#b36bff"
-];
-
 export default function PollPage(props: PollPageProps) {
   const params = use(props.params);
   const [poll, setPoll] = useState<PollData | null>(null);
@@ -56,9 +43,6 @@ export default function PollPage(props: PollPageProps) {
   const [voting, setVoting] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [shareLink, setShareLink] = useState("");
-  const [timeline, setTimeline] = useState<
-    Array<{ time: string; counts: Record<string, number> }>
-  >([]);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState(""); // Bot trap
   const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -79,14 +63,6 @@ export default function PollPage(props: PollPageProps) {
     () => Object.values(counts).reduce((sum, value) => sum + value, 0),
     [counts]
   );
-
-  const optionColors = useMemo(() => {
-    const mapping = new Map<string, string>();
-    options.forEach((option, index) => {
-      mapping.set(option.id, chartPalette[index % chartPalette.length]);
-    });
-    return mapping;
-  }, [options]);
 
   const isExpired = useMemo(() => {
     if (!poll?.expires_at) return false;
@@ -117,18 +93,6 @@ export default function PollPage(props: PollPageProps) {
     }
 
     loadPoll();
-  }, [params.pollId]);
-
-  useEffect(() => {
-    async function loadTimeline() {
-      const response = await fetch(`/api/polls/${params.pollId}/history/options`);
-      if (!response.ok) return;
-      const payload = await response.json();
-      setTimeline(payload.timeline ?? []);
-      setOptions(payload.options ?? []);
-    }
-
-    loadTimeline();
   }, [params.pollId]);
 
   // Real-time updates using Supabase Realtime (production-ready)
@@ -506,35 +470,6 @@ export default function PollPage(props: PollPageProps) {
         </div>
       )}
 
-      <section className="card chart">
-        <div className="section-title">
-          <h2>Vote timeline</h2>
-          <p className="muted">Last 6 hours of activity.</p>
-        </div>
-        <div className="chart-canvas">
-          {timeline.length === 0 ? (
-            <p className="muted">No votes yet.</p>
-          ) : (
-            <svg viewBox="0 0 300 120" role="img" aria-label="Vote timeline" style={{ width: '100%', height: 'auto' }}>
-              {renderStackedChart(timeline, options, optionColors)}
-            </svg>
-          )}
-        </div>
-        {options.length > 0 && (
-          <div className="chart-legend">
-            {options.map((option) => (
-              <div className="legend-item" key={option.id}>
-                <span
-                  className="legend-swatch"
-                  style={{ backgroundColor: optionColors.get(option.id) }}
-                />
-                <span>{option.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
       <section className="flow">
         <div className="section-title">
           <h2>How we keep voting fair</h2>
@@ -556,60 +491,4 @@ export default function PollPage(props: PollPageProps) {
       </section>
     </section>
   );
-}
-
-function renderStackedChart(
-  data: Array<{ time: string; counts: Record<string, number> }>,
-  options: Array<{ id: string; label: string }>,
-  optionColors: Map<string, string>
-) {
-  if (data.length === 0) return null;
-  const width = 300;
-  const height = 120;
-  const padding = 10;
-  const step = data.length > 1 ? (width - padding * 2) / (data.length - 1) : 0;
-
-  const totals = data.map((entry) =>
-    Object.values(entry.counts).reduce((sum, value) => sum + value, 0)
-  );
-  const max = Math.max(...totals, 1);
-
-  const series = options.map((option, index) => ({
-    id: option.id,
-    color: optionColors.get(option.id) ?? chartPalette[index % chartPalette.length]
-  }));
-
-  const stackedPaths = series.map((serie, seriesIndex) => {
-    const points = data.map((entry, index) => {
-      const x = padding + step * index;
-      const previousSum = series
-        .slice(0, seriesIndex)
-        .reduce((sum, prev) => sum + (entry.counts[prev.id] ?? 0), 0);
-      const currentValue = entry.counts[serie.id] ?? 0;
-      const yTop = height - padding - ((previousSum + currentValue) / max) * (height - padding * 2);
-      const yBase = height - padding - (previousSum / max) * (height - padding * 2);
-      return { x, yTop, yBase };
-    });
-
-    const topPath = points
-      .map((point, index) =>
-        `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.yTop.toFixed(2)}`
-      )
-      .join(" ");
-    const basePath = points
-      .slice()
-      .reverse()
-      .map((point) => `L ${point.x.toFixed(2)} ${point.yBase.toFixed(2)}`)
-      .join(" ");
-
-    const areaPath = `${topPath} ${basePath} Z`;
-    return (
-      <g key={serie.id}>
-        <path d={areaPath} fill={serie.color} opacity="0.7" />
-        <path d={topPath} stroke={serie.color} strokeWidth="2" fill="none" />
-      </g>
-    );
-  });
-
-  return <g>{stackedPaths}</g>;
 }
