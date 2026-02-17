@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage } from "http";
 import { Server } from "socket.io";
 
-const port = Number(process.env.REALTIME_PORT ?? 4001);
+const port = Number(process.env.PORT ?? process.env.REALTIME_PORT ?? 4001);
 
 const viewerCounts = new Map<string, number>();
 

@@ -743,10 +743,11 @@ input::placeholder {
   align-items: center;
   padding: 18px 20px;
   border-radius: 16px;
-  background: var(--bg);
-  border: 2px solid var(--line);
+  background: var(--card-bg);
+  border: 2px solid var(--line-strong);
   cursor: pointer;
   font-weight: 500;
+  color: var(--ink);
   transition: all 0.2s ease;
 }
 
