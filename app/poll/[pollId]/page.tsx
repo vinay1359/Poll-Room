@@ -515,7 +515,7 @@ export default function PollPage(props: PollPageProps) {
           {timeline.length === 0 ? (
             <p className="muted">No votes yet.</p>
           ) : (
-            <svg viewBox="0 0 300 120" role="img" aria-label="Vote timeline">
+            <svg viewBox="0 0 300 120" role="img" aria-label="Vote timeline" style={{ width: '100%', height: 'auto' }}>
               {renderStackedChart(timeline, options, optionColors)}
             </svg>
           )}
@@ -603,7 +603,12 @@ function renderStackedChart(
       .join(" ");
 
     const areaPath = `${topPath} ${basePath} Z`;
-    return <path key={serie.id} d={areaPath} fill={serie.color} opacity="0.5" />;
+    return (
+      <g key={serie.id}>
+        <path d={areaPath} fill={serie.color} opacity="0.7" />
+        <path d={topPath} stroke={serie.color} strokeWidth="2" fill="none" />
+      </g>
+    );
   });
 
   return <g>{stackedPaths}</g>;
